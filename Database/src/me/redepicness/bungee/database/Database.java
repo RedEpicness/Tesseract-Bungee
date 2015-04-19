@@ -29,7 +29,7 @@ public class Database {
 
     public static Object getProperty(String username, String property){
         try{
-            PreparedStatement statement = connection.prepareStatement("GET ? FROM 'PlayerData' WHERE 'Username' = ?");
+            PreparedStatement statement = connection.prepareStatement("SELECT ? FROM 'PlayerData' WHERE 'Username' = ?");
             statement.setString(1, property);
             statement.setString(2, username);
             ResultSet resultSet = statement.executeQuery();
