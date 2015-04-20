@@ -25,12 +25,10 @@ public class CustomPlayer{
 
     public ArrayList<Rank> getRanks(){
         if(ranks != null) return ranks;
-        Object rank = Database.getProperty(name, "Ranks");
-        try{
-            ranks = ((ArrayList<Rank>) rank);
-        }
-        catch (ClassCastException e){
-            throw new RuntimeException("Recieved invalid Object type for RANKS with username "+name);
+        String rank = Database.getProperty(name, "Ranks");
+        ranks = new ArrayList<Rank>();
+        for(String r : rank.split(",")){
+            ranks.add(Rank.valueOf(r.toUpperCase()));
         }
         return ranks;
     }

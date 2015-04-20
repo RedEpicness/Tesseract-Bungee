@@ -8,8 +8,12 @@ public class Database {
 
     public static void init(){
         try {
-            connection = DriverManager.getConnection("jdbc:mysql://localhost/BattleRealms?autoReconnect=true", "root", "cocksteelers");
-        } catch (SQLException ex) {
+            System.out.println("loading class!");
+            Class.forName("com.mysql.jdbc.Driver");
+            System.out.println("loading connection");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost/battlerealms?autoReconnect=true", "root", "cocksteelers");
+            System.out.println("connection loaded!");
+        } catch (Exception ex) {
             throw new RuntimeException("Error connecting to database, aborting startup!", ex);
         }
     }
@@ -27,13 +31,13 @@ public class Database {
         return connection;
     }
 
-    public static Object getProperty(String username, String property){
+    public static <T> T getProperty(String username, String property){
         try{
-            PreparedStatement statement = connection.prepareStatement("SELECT ? FROM 'PlayerData' WHERE 'Username' = ?");
-            statement.setString(1, property);
-            statement.setString(2, username);
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM PlayerData WHERE Name=?");
+            statement.setString(1, username);
             ResultSet resultSet = statement.executeQuery();
-            return resultSet.getObject(property);
+            resultSet.first();
+            return (T) resultSet.getObject(property);
         }
         catch (SQLException e){
             throw new RuntimeException("Could not obtain "+property+" for "+username+"!", e);
