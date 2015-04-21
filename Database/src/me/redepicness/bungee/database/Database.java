@@ -8,11 +8,8 @@ public class Database {
 
     public static void init(){
         try {
-            System.out.println("loading class!");
             Class.forName("com.mysql.jdbc.Driver");
-            System.out.println("loading connection");
             connection = DriverManager.getConnection("jdbc:mysql://localhost/battlerealms?autoReconnect=true", "root", "cocksteelers");
-            System.out.println("connection loaded!");
         } catch (Exception ex) {
             throw new RuntimeException("Error connecting to database, aborting startup!", ex);
         }
@@ -37,10 +34,26 @@ public class Database {
             statement.setString(1, username);
             ResultSet resultSet = statement.executeQuery();
             resultSet.first();
-            return (T) resultSet.getObject(property);
+            T object = (T) resultSet.getObject(property);
+            statement.close();
+            resultSet.close();
+            return object;
         }
         catch (SQLException e){
             throw new RuntimeException("Could not obtain "+property+" for "+username+"!", e);
+        }
+    }
+
+    public static void generateNewUser(String username, String UUID){
+        try{
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO PlayerData (UUID, Name) VALUES ('?', '?')");
+            statement.setString(1, UUID);
+            statement.setString(2, username);
+            statement.executeUpdate();
+            statement.close();
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not generate new User data for "+username+" with UUID "+UUID+"!", e);
         }
     }
 
