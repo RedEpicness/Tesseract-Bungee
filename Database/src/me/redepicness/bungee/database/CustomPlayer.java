@@ -38,19 +38,19 @@ public class CustomPlayer{
     }
 
     public boolean hasRank(Rank rank) {
-        if(!exists()) Database.generateNewUser(name, ProxyServer.getInstance().getPlayer(name).getUUID());
+        if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(ranks == null) getRanks();
         assert ranks != null;
         return ranks.contains(rank);
     }
 
     public ArrayList<Rank> getRanks(){
-        if(!exists()) Database.generateNewUser(name, ProxyServer.getInstance().getPlayer(name).getUUID());
+        if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(ranks != null) return ranks;
         String rank = Database.getProperty(name, "Ranks");
         ranks = new ArrayList<Rank>();
         if(rank == null) ranks.add(Rank.DEFAULT);
-        else for(String r : rank.split(",")){
+        else for(String r : rank.split(":")){
             ranks.add(Rank.valueOf(r.toUpperCase()));
         }
         return ranks;

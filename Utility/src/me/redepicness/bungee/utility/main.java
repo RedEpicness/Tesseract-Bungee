@@ -2,6 +2,8 @@ package me.redepicness.bungee.utility;
 
 import me.redepicness.bungee.database.CustomPlayer;
 import me.redepicness.bungee.database.Rank;
+import me.redepicness.bungee.utility.commands.A;
+import me.redepicness.bungee.utility.commands.S;
 import me.redepicness.bungee.utility.commands.Staff;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.event.PermissionCheckEvent;
@@ -15,6 +17,8 @@ public class main extends Plugin implements Listener{
     @Override
     public void onEnable() {
         getProxy().getPluginManager().registerCommand(this, new Staff());
+        getProxy().getPluginManager().registerCommand(this, new S());
+        getProxy().getPluginManager().registerCommand(this, new A());
         getProxy().getPluginManager().registerListener(this, this);
     }
 
@@ -24,7 +28,7 @@ public class main extends Plugin implements Listener{
         if(player.hasPermission(Rank.HELPER, Rank.BUILDER)){
             Utility.sendToStaff(player.getFormattedName() + ChatColor.AQUA + " has joined the network!");
         }
-        System.out.println("Loaded ranks for "+player+": "+player.getRanks());
+        System.out.println("Loaded ranks for "+player.getName()+": "+player.getRanks());
     }
 
     @EventHandler
