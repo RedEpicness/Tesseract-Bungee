@@ -1,0 +1,4 @@
+main: me.redepicness.bungee.serverstatus.main
+version: 1.0
+name: ServerStatus
+author: Red_Epicness

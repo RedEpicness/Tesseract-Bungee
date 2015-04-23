@@ -24,6 +24,7 @@ public class CustomPlayer{
     }
 
     public String getFormattedName(){
+        if(isConsole()) return ChatColor.GRAY+name;
         if(hasRank(Rank.ADMIN))
             return ChatColor.RED+"Admin "+name+ChatColor.RESET;
         if(hasRank(Rank.MODERATOR))
@@ -38,6 +39,7 @@ public class CustomPlayer{
     }
 
     public boolean hasRank(Rank rank) {
+        if(isConsole()) return true;
         if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(ranks == null) getRanks();
         assert ranks != null;
@@ -45,10 +47,15 @@ public class CustomPlayer{
     }
 
     public ArrayList<Rank> getRanks(){
+        if(isConsole()) {
+            ArrayList<Rank> ranks = new ArrayList<>();
+            ranks.add(Rank.ADMIN);
+            return ranks;
+        }
         if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(ranks != null) return ranks;
         String rank = Database.getProperty(name, "Ranks");
-        ranks = new ArrayList<Rank>();
+        ranks = new ArrayList<>();
         if(rank == null) ranks.add(Rank.DEFAULT);
         else for(String r : rank.split(":")){
             ranks.add(Rank.valueOf(r.toUpperCase()));
@@ -61,6 +68,7 @@ public class CustomPlayer{
     }
 
     public boolean hasPermission(boolean inform, Rank... rankList){
+        if(isConsole()) return true;
         if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(ranks == null) getRanks();
         assert ranks != null;
@@ -102,14 +110,20 @@ public class CustomPlayer{
     }
 
     public void message(String... message){
+        if(isConsole()){
+            ProxyServer.getInstance().getConsole().sendMessages(message);
+            return;
+        }
         getProxiedPlayer().sendMessages(message);
     }
 
     public ProxiedPlayer getProxiedPlayer(){
+        if(isConsole()) return null;
         return ProxyServer.getInstance().getPlayer(name);
     }
 
     private boolean exists() {
+        if(isConsole()) return true;
         try{
             Database.getProperty(name, "Name");
         }
