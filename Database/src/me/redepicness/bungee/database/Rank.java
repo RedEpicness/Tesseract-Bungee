@@ -14,6 +14,15 @@ public enum Rank {
         return false;
     }
 
+    public static boolean isValid(String name){
+        try {
+            Rank.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        return true;
+    }
+
     public String withColors(){
         switch (this){
             case DEFAULT:

@@ -3,6 +3,7 @@ package me.redepicness.bungee.utility;
 import me.redepicness.bungee.database.CustomPlayer;
 import me.redepicness.bungee.database.Rank;
 import me.redepicness.bungee.utility.commands.A;
+import me.redepicness.bungee.utility.commands.Lookup;
 import me.redepicness.bungee.utility.commands.S;
 import me.redepicness.bungee.utility.commands.Staff;
 import net.md_5.bungee.api.ChatColor;
@@ -19,6 +20,8 @@ public class main extends Plugin implements Listener{
         getProxy().getPluginManager().registerCommand(this, new Staff());
         getProxy().getPluginManager().registerCommand(this, new S());
         getProxy().getPluginManager().registerCommand(this, new A());
+        getProxy().getPluginManager().registerCommand(this, new me.redepicness.bungee.utility.commands.Rank());
+        getProxy().getPluginManager().registerCommand(this, new Lookup());
         getProxy().getPluginManager().registerListener(this, this);
     }
 

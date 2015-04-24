@@ -63,6 +63,29 @@ public class CustomPlayer{
         return ranks;
     }
 
+    public void addRank(Rank rank){
+        ranks.add(rank);
+        Database.updateProperty(name, "Ranks", getRankString());
+    }
+
+    public void removeRank(Rank rank){
+        ranks.remove(rank);
+        if(ranks.isEmpty()){
+            ranks.add(Rank.DEFAULT);
+            Database.updateProperty(name, "Ranks", null);
+            return;
+        }
+        Database.updateProperty(name, "Ranks", getRankString());
+    }
+
+    private String getRankString(){
+        String rankstring = "";
+        for(Rank rank : ranks){
+            rankstring += ":"+rank.toString();
+        }
+        return rankstring.substring(1);
+    }
+
     public boolean hasPermission(Rank... rankList){
         return hasPermission(false, rankList);
     }
@@ -122,7 +145,11 @@ public class CustomPlayer{
         return ProxyServer.getInstance().getPlayer(name);
     }
 
-    private boolean exists() {
+    public boolean isOnline(){
+        return getProxiedPlayer() != null;
+    }
+
+    public boolean exists() {
         if(isConsole()) return true;
         try{
             Database.getProperty(name, "Name");
