@@ -16,11 +16,11 @@ public class Staff extends Command{
 
     @Override
     public void execute(CommandSender commandSender, String[] strings) {
-        CustomPlayer player = new CustomPlayer(commandSender.getName());
+        CustomPlayer player = CustomPlayer.get(commandSender.getName());
         if(!player.hasPermission(true, Rank.HELPER)) return;
         player.message(ChatColor.GOLD+"Online staff:");
         for(ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
-            CustomPlayer customPlayer = new CustomPlayer(p.getName());
+            CustomPlayer customPlayer = CustomPlayer.get(p.getName());
             if(customPlayer.hasPermission(Rank.HELPER, Rank.BUILDER)){
                 player.message(ChatColor.GRAY+"- "+customPlayer.getFormattedName()+ChatColor.GRAY+" ("+p.getServer().getInfo().getName()+")");
             }

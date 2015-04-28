@@ -20,7 +20,7 @@ public class SS extends Command {
     }
 
     public void execute(CommandSender sender, String[] args) {
-        CustomPlayer player = new CustomPlayer(sender.getName());
+        CustomPlayer player = CustomPlayer.get(sender.getName());
         if(!player.hasPermission(true, Rank.ADMIN)) return;
         ProxiedPlayer p = ((ProxiedPlayer) sender);
         if (args.length == 0) {

@@ -15,7 +15,7 @@ public class A extends Command{
 
     @Override
     public void execute(CommandSender commandSender, String[] strings) {
-        CustomPlayer player = new CustomPlayer(commandSender.getName());
+        CustomPlayer player = CustomPlayer.get(commandSender.getName());
         if(!player.hasPermission(true, Rank.ADMIN)) return;
         String text = "";
         for(String s : strings){

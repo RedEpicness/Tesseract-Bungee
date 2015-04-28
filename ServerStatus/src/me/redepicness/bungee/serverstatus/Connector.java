@@ -14,7 +14,7 @@ public class Connector {
         final ServerStatus.StatusInfo statusInfo = ServerStatus.getStatusInfo(server);
         final ServerInfo serverInfo = ProxyServer.getInstance().getServers().get(server);
         serverInfo.ping((ServerPing ping, Throwable throwable) -> {
-            CustomPlayer p = new CustomPlayer(player.getName());
+            CustomPlayer p = CustomPlayer.get(player.getName());
             if (ping == null) {
                 statusInfo.setStatus(ServerStatus.Status.OFFLINE);
                 ServerStatus.updateStatus(server, statusInfo);

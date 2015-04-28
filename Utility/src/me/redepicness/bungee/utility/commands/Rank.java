@@ -1,6 +1,7 @@
 package me.redepicness.bungee.utility.commands;
 
 import me.redepicness.bungee.database.CustomPlayer;
+import me.redepicness.bungee.utility.Utility;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Command;
@@ -18,7 +19,7 @@ public class Rank extends Command {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        CustomPlayer player = new CustomPlayer(sender.getName());
+        CustomPlayer player = CustomPlayer.get(sender.getName());
         if(!player.hasPermission(true, /*Rank.*/ADMIN)) return;
         if(args.length < 3){
             player.message(ChatColor.RED+"Not enough arguments. Usage: '"+ ChatColor.GOLD+"/rank <operation> <name> <rank>"+ChatColor.RED+"'");
@@ -28,7 +29,7 @@ public class Rank extends Command {
             player.message(ChatColor.RED+"Invalid operation '"+ ChatColor.GOLD+args[0]+ChatColor.RED+"' Options: add, remove");
             return;
         }
-        CustomPlayer target = new CustomPlayer(args[1]);
+        CustomPlayer target = CustomPlayer.get(args[1]);
         if(!target.exists()){
             player.message(ChatColor.RED+"No player with the name '"+ChatColor.GOLD+target.getName()+ChatColor.RED+"' found in the database!");
             return;
@@ -44,6 +45,7 @@ public class Rank extends Command {
                 return;
             }
             target.addRank(rank);
+            Utility.sendToAdmin(player.getFormattedName() + ChatColor.AQUA + " added "+rank.withColors()+ChatColor.AQUA+" to " + target.getFormattedName() + ChatColor.AQUA+".");
             player.message(ChatColor.GREEN+"Added '"+rank.withColors()+ChatColor.GREEN+"' to '"+target.getFormattedName()+ChatColor.GREEN+"'.");
             String ranks = "";
             for(me.redepicness.bungee.database.Rank rank1 : target.getRanks()){
@@ -57,6 +59,7 @@ public class Rank extends Command {
                 return;
             }
             target.removeRank(rank);
+            Utility.sendToAdmin(player.getFormattedName() + ChatColor.AQUA + " removed " + rank.withColors() + ChatColor.AQUA+  " from " + target.getFormattedName() + ChatColor.AQUA + ".");
             player.message(ChatColor.GREEN+"Removed '"+rank.withColors()+ChatColor.GREEN+"' from '"+target.getFormattedName()+ChatColor.GREEN+"'.");
             String ranks = "";
             for(me.redepicness.bungee.database.Rank rank1 : target.getRanks()){

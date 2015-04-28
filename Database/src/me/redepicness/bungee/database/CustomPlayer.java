@@ -1,17 +1,55 @@
 package me.redepicness.bungee.database;
 
+import me.redepicness.bungee.utility.Utility;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class CustomPlayer{
+
+    private static Map<String, CustomPlayer> cachedData = new HashMap<>();
+
+    static void init(){
+        ProxyServer.getInstance().getScheduler().schedule
+                (ProxyServer.getInstance().getPluginManager().getPlugin("Database"), CustomPlayer::checkCachedData, 0, 5, TimeUnit.MINUTES);
+    }
+
+    public static CustomPlayer get(String name){
+        if(cachedData.containsKey(name)) return cachedData.get(name);
+        CustomPlayer player = new CustomPlayer(name);
+        cachedData.put(name, player);
+        Utility.log(ChatColor.GREEN + "Loaded data for " + player.getFormattedName() + ChatColor.GREEN + " Ranks: " + player.getRanks());
+
+        return player;
+    }
+
+    public static void uncache(String name){
+        cachedData.remove(name);
+    }
+
+    private static void checkCachedData(){
+        Utility.log(ChatColor.RED+"Checking cached data!");
+        cachedData.values().stream().forEach(player -> {
+            if(!player.isOnline()){
+                cachedData.remove(player.getName());
+                Utility.log(player.getFormattedName() + ChatColor.RED + " not online, removing data!");
+            }
+        });
+        ProxyServer.getInstance().getPlayers().stream().filter(p -> !cachedData.containsKey(p.getName())).forEach(p -> {
+            CustomPlayer player = new CustomPlayer(p.getName());
+            cachedData.put(p.getName(), player);
+        });
+    }
 
     private String name;
     private ArrayList<Rank> ranks = null;
 
-    public CustomPlayer(String name){
+    private CustomPlayer(String name){
         this.name = name;
     }
 

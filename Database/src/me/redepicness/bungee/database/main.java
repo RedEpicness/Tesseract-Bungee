@@ -16,6 +16,11 @@ public class main extends Plugin implements Listener{
             ProxyServer.getInstance().stop("Error connecting to database, shutting down proxy!");
             return;
         }
+        CustomPlayer.init();
     }
 
+    @Override
+    public void onDisable() {
+        Database.end();
+    }
 }

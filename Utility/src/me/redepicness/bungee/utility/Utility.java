@@ -13,7 +13,7 @@ public class Utility {
 
     public static void sendToStaff(String message){
         for(ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
-            CustomPlayer player = new CustomPlayer(p.getName());
+            CustomPlayer player = CustomPlayer.get(p.getName());
             if(player.hasPermission(Rank.HELPER)){
                 player.message(staffPrefix + message);
             }
@@ -22,10 +22,15 @@ public class Utility {
 
     public static void sendToAdmin(String message) {
         for(ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
-            CustomPlayer player = new CustomPlayer(p.getName());
+            CustomPlayer player = CustomPlayer.get(p.getName());
             if(player.hasPermission(Rank.ADMIN)){
                 player.message(adminPrefix + message);
             }
         }
     }
+
+    public static void log(String message){
+        ProxyServer.getInstance().getConsole().sendMessage(message);
+    }
+
 }
