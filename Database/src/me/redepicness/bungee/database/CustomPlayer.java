@@ -23,6 +23,10 @@ public class CustomPlayer{
         if(cachedData.containsKey(name)) return cachedData.get(name);
         CustomPlayer player = new CustomPlayer(name);
         cachedData.put(name, player);
+        if(!player.exists()){
+            cachedData.remove(name);
+            return player;
+        }
         Utility.log(ChatColor.GREEN + "Loaded data for " + player.getFormattedName() + ChatColor.GREEN + " Ranks: " + player.getRanks());
 
         return player;
@@ -46,6 +50,7 @@ public class CustomPlayer{
         });
     }
 
+    private String lastMessage = null;
     private String name;
     private ArrayList<Rank> ranks = null;
 
@@ -176,6 +181,18 @@ public class CustomPlayer{
             return;
         }
         getProxiedPlayer().sendMessages(message);
+    }
+
+    public void setLastMessage(String username){
+        lastMessage = username;
+    }
+
+    public String getLastMessage(){
+        return lastMessage;
+    }
+
+    public boolean hasLastMessage(){
+        return lastMessage != null;
     }
 
     public ProxiedPlayer getProxiedPlayer(){

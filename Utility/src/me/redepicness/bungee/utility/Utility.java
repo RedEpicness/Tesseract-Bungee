@@ -10,6 +10,7 @@ public class Utility {
 
     private static String staffPrefix = ChatColor.GOLD+"[S] "+ChatColor.AQUA;
     private static String adminPrefix = ChatColor.YELLOW+"[A] "+ChatColor.AQUA;
+    private static String builderPrefix = ChatColor.DARK_AQUA+"[B] "+ChatColor.AQUA;
 
     public static void sendToStaff(String message){
         for(ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
@@ -25,6 +26,15 @@ public class Utility {
             CustomPlayer player = CustomPlayer.get(p.getName());
             if(player.hasPermission(Rank.ADMIN)){
                 player.message(adminPrefix + message);
+            }
+        }
+    }
+
+    public static void sendToBuilder(String message) {
+        for(ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
+            CustomPlayer player = CustomPlayer.get(p.getName());
+            if(player.hasPermission(Rank.BUILDER)){
+                player.message(builderPrefix + message);
             }
         }
     }

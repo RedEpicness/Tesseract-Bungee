@@ -11,7 +11,7 @@ import net.md_5.bungee.api.plugin.Command;
 public class Staff extends Command{
 
     public Staff(){
-        super("staff");
+        super("staff", "", "wheredahoodat");
     }
 
     @Override
