@@ -15,7 +15,7 @@ import java.io.IOException;
 public class Filter extends Command{
 
     public Filter(){
-        super("filter", "", "f");
+        super("filter");
     }
 
     @Override

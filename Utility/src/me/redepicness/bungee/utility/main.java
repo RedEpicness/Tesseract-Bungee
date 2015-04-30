@@ -62,6 +62,7 @@ public class main extends Plugin implements Listener{
     @EventHandler
     public void onPostLogin(PostLoginEvent e){
         CustomPlayer player = CustomPlayer.get(e.getPlayer().getName());
+        player.updateLastLogin();
         if(player.hasPermission(Rank.HELPER, Rank.BUILDER)){
             Utility.sendToStaff(player.getFormattedName() + ChatColor.AQUA + " has "+ChatColor.GREEN+"joined"+ChatColor.AQUA+" the network!");
         }

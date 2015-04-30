@@ -1,6 +1,7 @@
 package me.redepicness.bungee.database;
 
 import java.sql.*;
+import java.util.Calendar;
 
 public class Database {
 
@@ -84,9 +85,10 @@ public class Database {
             if(!CustomPlayer.get(username).exists()){
                 throw new RuntimeException("Tried to generate new user in database, while new user is offline! Aborted due to inconsistency with the call!");
             }
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO PlayerData (UUID, Name) VALUES ('?', '?')");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO PlayerData (UUID, Name, FirstLogin) VALUES ('?', '?', '?')");
             statement.setString(1, UUID);
             statement.setString(2, username);
+            statement.setLong(3, Calendar.getInstance().getTimeInMillis());
             statement.executeUpdate();
             statement.close();
         }
