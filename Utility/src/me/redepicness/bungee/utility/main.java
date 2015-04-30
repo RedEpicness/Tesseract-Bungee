@@ -5,15 +5,29 @@ import me.redepicness.bungee.database.Rank;
 import me.redepicness.bungee.utility.commands.*;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.event.PermissionCheckEvent;
-import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.event.TabCompleteEvent;
+import net.md_5.bungee.api.ServerPing;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.event.EventHandler;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class main extends Plugin implements Listener{
+
+    public static List<String> blockedPhrases;
+    public static Map<String, String> lastMessage = new HashMap<>();
+    public static Configuration filterConfig;
+    public static Configuration motdConfig;
 
     @Override
     public void onEnable() {
@@ -29,9 +43,21 @@ public class main extends Plugin implements Listener{
         getProxy().getPluginManager().registerCommand(this, new me.redepicness.bungee.utility.commands.Rank());
         getProxy().getPluginManager().registerCommand(this, new Lookup());
         getProxy().getPluginManager().registerCommand(this, new Spy());
+        getProxy().getPluginManager().registerCommand(this, new Motd());
         getProxy().getPluginManager().registerListener(this, this);
         getProxy().getPluginManager().registerListener(this, new Spyer());
+        getProxy().getPluginManager().registerCommand(this, new Filter());
+        try{
+            filterConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File("blocked.yml"));
+            motdConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File("motd.yml"));
+        }
+        catch (IOException e){
+            throw new RuntimeException("Could not load configs!", e);
+        }
+        blockedPhrases = filterConfig.getStringList("blocked");
     }
+
+
 
     @EventHandler
     public void onPostLogin(PostLoginEvent e){
@@ -44,6 +70,7 @@ public class main extends Plugin implements Listener{
     @EventHandler
     public void onDisconnect(PlayerDisconnectEvent e){
         CustomPlayer player = CustomPlayer.get(e.getPlayer().getName());
+        if(lastMessage.containsKey(player.getName())) lastMessage.remove(player.getName());
         if(player.hasPermission(Rank.HELPER, Rank.BUILDER)){
             Utility.sendToStaff(player.getFormattedName() + ChatColor.AQUA + " has "+ChatColor.RED+"left"+ChatColor.AQUA+" the network!");
         }
@@ -58,6 +85,15 @@ public class main extends Plugin implements Listener{
             e.setHasPermission(true);
         else
             e.setHasPermission(false);
+    }
+
+    @EventHandler
+    public void onProxyPing(ProxyPingEvent e){
+        e.registerIntent(this);
+        ServerPing ping = e.getResponse();
+        ping.setDescription(ChatColor.RED+"Battle"+ChatColor.GOLD+"Realms\n"+ChatColor.RESET+motdConfig.getString("description").replace('&', ChatColor.COLOR_CHAR));
+        ping.getPlayers().setSample(null);
+        e.completeIntent(this);
     }
 
     @EventHandler
@@ -78,7 +114,7 @@ public class main extends Plugin implements Listener{
                     ProxyServer.getInstance().getServers().values().stream().filter(s -> s.getName().startsWith(args[1])).forEach(s -> e.getSuggestions().add(s.getName()));
                     break;
                 case "rank":
-                    if (args.length == 3) {
+                    if (args.length == 2) {
                         if ("add".startsWith(args[2])) e.getSuggestions().add("add");
                         if ("remove".startsWith(args[2])) e.getSuggestions().add("remove");
                         return;
@@ -111,8 +147,113 @@ public class main extends Plugin implements Listener{
                     }
                     break;
             }
+            getProxy().getPlayers().stream().filter(player -> player.getName().toLowerCase().startsWith(args[args.length - 1])).forEach(player -> e.getSuggestions().add(player.getName()));
         }
-        getProxy().getPlayers().stream().filter(player -> player.getName().toLowerCase().startsWith(args[args.length - 1])).forEach(player -> e.getSuggestions().add(player.getName()));
     }
 
+    @EventHandler
+    public void onChat(ChatEvent e){
+        String message = e.getMessage();
+        if(e.isCommand()) return;
+        CustomPlayer player = null;
+        ArrayList<String> playernames = new ArrayList<>();
+        for (ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
+            playernames.add(p.getName());
+            if(p.getAddress().equals(e.getSender().getAddress())){
+                player = CustomPlayer.get(p.getName());
+            }
+        }
+        assert player != null;
+        if(player.hasPermission(Rank.ADMIN)) return;
+        if(lastMessage.containsKey(player.getName())){
+            if(lastMessage.get(player.getName()).equals(e.getMessage())) {
+                player.message(ChatColor.RED+"You are not allowed to send the same message twice!");
+                e.setCancelled(true);
+                return;
+            }
+        }
+        else{
+            lastMessage.put(player.getName(), e.getMessage());
+        }
+        boolean skipBlockedWordCheck = false;
+        boolean skipTooManyCapitals = false;
+        boolean skipSameCharacters = false;
+        for(String phrase : blockedPhrases){
+            if(message.toLowerCase().contains(phrase)){
+                for(String name : playernames){
+                    if(name.toLowerCase().contains(phrase.toLowerCase()) && message.toLowerCase().contains(name.toLowerCase())){
+                        skipBlockedWordCheck = true;
+                    }
+                }
+                if(!skipBlockedWordCheck){
+                    player.message(ChatColor.RED+"Your message was blocked for containing '"+phrase+"'!");
+                    e.setCancelled(true);
+                    return;
+                }
+                skipBlockedWordCheck = false;
+            }
+        }
+        int amount = 0;
+        String capital = "";
+        for(char character : message.toCharArray()){
+            if(Character.isUpperCase(character) || character == ' '){
+                amount++;
+                capital += character;
+                if(amount >= 5){
+                    for(String name : playernames){
+                        if(message.toLowerCase().contains(name.toLowerCase())){
+                            int amount1 = 0;
+                            for(char character1 : message.toCharArray()){
+                                if(Character.isUpperCase(character1)  || character == ' '){
+                                    amount1++;
+                                    if(amount1 >= 5){
+                                        if(name.contains(capital)){
+                                            skipTooManyCapitals = true;
+                                        }
+                                    }
+                                } else{
+                                    amount1 = 0;
+                                }
+                            }
+                        }
+                    }
+                    if(!skipTooManyCapitals) {
+                        player.message(ChatColor.RED + "Your message was blocked for containing too many capital letters next to each other!");
+                        e.setCancelled(true);
+                        return;
+                    }
+                    skipTooManyCapitals = false;
+                }
+            }
+            else{
+                amount = 0;
+                capital = "";
+            }
+        }
+        char previous = ' ';
+        int repetitions = 0;
+        for(char character : message.toCharArray()){
+            if(character == previous){
+                repetitions++;
+                if(repetitions >= 5){
+                    String phrase = "" + character + character + character + character;
+                    for (String name : playernames) {
+                        if (message.toLowerCase().contains(name.toLowerCase()) && name.toLowerCase().contains(phrase.toLowerCase())){
+                            skipSameCharacters = true;
+                        }
+                    }
+                    if(!skipSameCharacters) {
+                        player.message(ChatColor.RED+"Your message was blocked for containing too many same letters ("+character+") next to each other!");
+                        e.setCancelled(true);
+                        return;
+                    }
+                    skipSameCharacters = false;
+                }
+            }
+            else {
+                previous = character;
+                repetitions = 0;
+            }
+        }
+    }
 }
