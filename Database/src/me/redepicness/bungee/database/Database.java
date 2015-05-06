@@ -1,7 +1,9 @@
 package me.redepicness.bungee.database;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 
 public class Database {
 
@@ -40,15 +42,88 @@ public class Database {
         }
     }
 
-    public static Connection getConnection(){
-        if(connection == null) throw new RuntimeException("Connection is null!!!");
-        return connection;
-    }
-
-    public static <T> T getProperty(String username, String property){
+    public static void insertInfraction(Infraction infraction){
         try{
             checkConnection();
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM PlayerData WHERE Name=?");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO Infractions ('Time', 'Offender', 'Issuer', 'Type', 'Reason', 'Duration') " +
+                    "VALUES ('?', '?', '?', '?', '?', '?')");
+            statement.setLong(1, infraction.getWhen());
+            statement.setString(2, infraction.getOffender());
+            statement.setString(3, infraction.getIssuer());
+            statement.setString(4, infraction.getType().toString());
+            statement.setString(5, infraction.getReason());
+            statement.setInt(6, infraction.getDuration());
+            statement.executeUpdate();
+            statement.close();
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not update infraction!", e);
+        }
+    }
+
+    public static void expireInfraction(Infraction infraction){
+        try{
+            checkConnection();
+            PreparedStatement statement = connection.prepareStatement("UPDATE Infractions SET Expired=1, WhoExpired=?, WhenExpired=? WHERE ID=?");
+            statement.setString(1, infraction.getWhoExpired());
+            statement.setLong(2, infraction.getWhenExpired());
+            statement.setInt(3, infraction.getID());
+            statement.executeUpdate();
+            statement.close();
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not update expire infraction!", e);
+        }
+    }
+
+    public static Collection<Infraction> getInfractionsBulk(String offender){
+        try{
+            checkConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM Infractions WHERE Offender=?");
+            statement.setString(1, offender);
+            ResultSet resultSet = statement.executeQuery();
+            Collection<Infraction> infractions = new ArrayList<>();
+            if(!resultSet.isBeforeFirst()){
+                return infractions;
+            }
+            resultSet.first();
+            do {
+                Infraction infraction;
+                if(resultSet.getBoolean("Expired")){
+                    infraction = new Infraction(resultSet.getString("Issuer"), offender, resultSet.getLong("Time"), resultSet.getInt("Duration"),
+                            resultSet.getString("Type"), resultSet.getString("Reason"), resultSet.getInt("ID"), resultSet.getString("WhoExpired"),
+                            resultSet.getLong("WhenExpired"));
+                }
+                else{
+                    infraction = new Infraction(resultSet.getString("Issuer"), offender, resultSet.getLong("Time"), resultSet.getInt("Duration"),
+                            resultSet.getString("Type"), resultSet.getString("Reason"), resultSet.getInt("ID"));
+                }
+                infractions.add(infraction);
+            }
+            while (resultSet.next());
+            statement.close();
+            resultSet.close();
+            return infractions;
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not obtain infractions for "+offender+"!", e);
+        }
+    }
+
+    public static Database getTable(String name){
+        return new Database(name);
+    }
+
+    private String tableName;
+
+    private Database(String tableName){
+        this.tableName = tableName;
+    }
+
+    public <T> T getPropertyForName(String username, String property){
+        try{
+            checkConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM "+tableName+" WHERE Name=?");
             statement.setString(1, username);
             ResultSet resultSet = statement.executeQuery();
             if(!resultSet.isBeforeFirst()){
@@ -65,10 +140,10 @@ public class Database {
         }
     }
 
-    public static <T> void updateProperty(String username, String propertyName, T property){
+    public <T> void updatePropertyForName(String username, String propertyName, T property){
         try{
             checkConnection();
-            PreparedStatement statement = connection.prepareStatement("UPDATE PlayerData SET "+propertyName+"=? WHERE Name=?");
+            PreparedStatement statement = connection.prepareStatement("UPDATE "+tableName+" SET "+propertyName+"=? WHERE Name=?");
             statement.setObject(1, property);
             statement.setString(2, username);
             statement.executeUpdate();

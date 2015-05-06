@@ -1,5 +1,6 @@
 package me.redepicness.bungee.database;
 
+import me.redepicness.bungee.database.Infraction.InfractionType;
 import me.redepicness.bungee.utility.Utility;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
@@ -52,6 +53,7 @@ public class CustomPlayer{
     private ArrayList<Rank> ranks = null;
     private ArrayList<String> friends = null;
     private ArrayList<String> friendRequests = null;
+    private Collection<Infraction> infractions = null;
     private long lastLogin = -1;
     private long firstLogin = -1;
 
@@ -69,22 +71,22 @@ public class CustomPlayer{
 
     public long getFirstLogin() {
         if(isConsole()) return -1;
-        if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
+        if(!exists()) Database.getTable("PlayerData").generateNewUser(name, getProxiedPlayer().getUUID());
         if(firstLogin != -1) return firstLogin;
-        firstLogin = Database.getProperty(name, "FirstLogin");
+        firstLogin = Database.getTable("PlayerData").getPropertyForName(name, "FirstLogin");
         return firstLogin;
     }
 
     public long getLastLogin() {
         if(isConsole()) return -1;
-        if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
+        if(!exists()) Database.getTable("PlayerData").generateNewUser(name, getProxiedPlayer().getUUID());
         if(lastLogin != -1) return lastLogin;
-        lastLogin = Database.getProperty(name, "LastLogin");
+        lastLogin = Database.getTable("PlayerData").getPropertyForName(name, "LastLogin");
         return lastLogin;
     }
 
     public void updateLastLogin(){
-        Database.updateProperty(name, "LastLogin", Calendar.getInstance().getTimeInMillis());
+        Database.getTable("PlayerData").updatePropertyForName(name, "LastLogin", Calendar.getInstance().getTimeInMillis());
     }
 
     public String getFormattedName(){
@@ -117,19 +119,35 @@ public class CustomPlayer{
         return name;
     }
 
+    public Infraction getActiveInfraction(InfractionType type){
+        if(isConsole()) return null;
+        if(infractions == null) getInfractions();
+        assert infractions != null;
+        ArrayList<Infraction> inf = new ArrayList<>();
+        infractions.stream().filter(i -> !i.isExpired() && i.getType().equals(type)).forEach(inf::add);
+        return inf.size() == 0 ? null : inf.get(0);
+    }
+
+    public Collection<Infraction> getInfractions(){
+        if(isConsole()) return null;
+        if(infractions != null) return infractions;
+        infractions = Database.getInfractionsBulk(name);
+        return infractions;
+    }
+
     public void removeFriend(String username){
         if(friends == null) getFriends();
         assert friends != null;
         friends.remove(username);
         if(friends.isEmpty()){
-            Database.updateProperty(name, "Friends", null);
+            Database.getTable("PlayerData").updatePropertyForName(name, "Friends", null);
             return;
         }
         String fString = "";
         for(String s : friends){
             fString += ":"+s;
         }
-        Database.updateProperty(name, "Friends", fString.substring(1));
+        Database.getTable("PlayerData").updatePropertyForName(name, "Friends", fString.substring(1));
     }
 
     public boolean hasFriend(String username){
@@ -144,7 +162,7 @@ public class CustomPlayer{
         if(isConsole()) return null;
         if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(friends != null) return friends;
-        String result = Database.getProperty(name, "Friends");
+        String result = Database.getTable("PlayerData").getPropertyForName(name, "Friends");
         friends = new ArrayList<>();
         if(result != null) Collections.addAll(friends, result.split(":"));
         return friends;
@@ -158,7 +176,7 @@ public class CustomPlayer{
         for(String s : friendRequests){
             fString += ":"+s;
         }
-        Database.updateProperty(name, "FRequests", fString.substring(1));
+        Database.getTable("PlayerData").updatePropertyForName(name, "FRequests", fString.substring(1));
     }
 
     public void acceptRequest(String username){
@@ -169,7 +187,7 @@ public class CustomPlayer{
         for(String s : friends){
             fString += ":"+s;
         }
-        Database.updateProperty(name, "Friends", fString.substring(1));
+        Database.getTable("PlayerData").updatePropertyForName(name, "Friends", fString.substring(1));
 
         //Very hack, much legit, such genius (it's an ugly hack but it should work :D)
         CustomPlayer player = new CustomPlayer(username);
@@ -185,14 +203,14 @@ public class CustomPlayer{
         assert friendRequests != null;
         friendRequests.remove(username);
         if(friendRequests.isEmpty()){
-            Database.updateProperty(name, "FRequests", null);
+            Database.getTable("PlayerData").updatePropertyForName(name, "FRequests", null);
             return;
         }
         String fString = "";
         for(String s : friendRequests){
             fString += ":"+s;
         }
-        Database.updateProperty(name, "FRequests", fString.substring(1));
+        Database.getTable("PlayerData").updatePropertyForName(name, "FRequests", fString.substring(1));
     }
 
     public boolean hasFRequestFrom(String username){
@@ -207,7 +225,7 @@ public class CustomPlayer{
         if(isConsole()) return null;
         if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(friendRequests != null) return friendRequests;
-        String result = Database.getProperty(name, "FRequests");
+        String result = Database.getTable("PlayerData").getPropertyForName(name, "FRequests");
         friendRequests = new ArrayList<>();
         if(result != null) Collections.addAll(friendRequests, result.split(":"));
         return friendRequests;
@@ -229,7 +247,7 @@ public class CustomPlayer{
         }
         if(!exists()) Database.generateNewUser(name, getProxiedPlayer().getUUID());
         if(ranks != null) return ranks;
-        String rank = Database.getProperty(name, "Ranks");
+        String rank = Database.getTable("PlayerData").getPropertyForName(name, "Ranks");
         ranks = new ArrayList<>();
         if(rank == null) ranks.add(Rank.DEFAULT);
         else for(String r : rank.split(":")){
@@ -241,17 +259,17 @@ public class CustomPlayer{
     public void addRank(Rank rank){
         ranks.add(rank);
         if(ranks.contains(Rank.DEFAULT)) ranks.remove(Rank.DEFAULT);
-        Database.updateProperty(name, "Ranks", getRankString());
+        Database.getTable("PlayerData").updatePropertyForName(name, "Ranks", getRankString());
     }
 
     public void removeRank(Rank rank){
         ranks.remove(rank);
         if(ranks.isEmpty()){
             ranks.add(Rank.DEFAULT);
-            Database.updateProperty(name, "Ranks", null);
+            Database.getTable("PlayerData").updatePropertyForName(name, "Ranks", null);
             return;
         }
-        Database.updateProperty(name, "Ranks", getRankString());
+        Database.getTable("PlayerData").updatePropertyForName(name, "Ranks", getRankString());
     }
 
     private String getRankString(){
@@ -340,7 +358,7 @@ public class CustomPlayer{
     public boolean exists() {
         if(isConsole()) return true;
         try{
-            Database.getProperty(name, "Name");
+            Database.getTable("PlayerData").getPropertyForName(name, "Name");
         }
         catch(IllegalArgumentException e){
             return false;

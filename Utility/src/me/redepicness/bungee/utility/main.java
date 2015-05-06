@@ -1,6 +1,8 @@
 package me.redepicness.bungee.utility;
 
 import me.redepicness.bungee.database.CustomPlayer;
+import me.redepicness.bungee.database.Infraction;
+import me.redepicness.bungee.database.Infraction.InfractionType;
 import me.redepicness.bungee.database.Rank;
 import me.redepicness.bungee.utility.commands.*;
 import net.md_5.bungee.api.ChatColor;
@@ -14,13 +16,11 @@ import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.event.EventPriority;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class main extends Plugin implements Listener{
 
@@ -57,7 +57,34 @@ public class main extends Plugin implements Listener{
         blockedPhrases = filterConfig.getStringList("blocked");
     }
 
-
+    @EventHandler
+    public void onLogin(LoginEvent e){
+        e.registerIntent(this);
+        getProxy().getScheduler().runAsync(this, () -> {
+            CustomPlayer player = CustomPlayer.get(e.getConnection().getName());
+            if (player.getActiveInfraction(InfractionType.BAN) != null) {
+                Infraction infraction = player.getActiveInfraction(InfractionType.BAN);
+                e.setCancelled(true);
+                e.setCancelReason(ChatColor.RED + "You are banned from this server! Reason:\n" + ChatColor.GOLD + infraction.getReason());
+            }
+            if (player.getActiveInfraction(InfractionType.TEMP_BAN) != null) {
+                Infraction infraction = player.getActiveInfraction(InfractionType.TEMP_BAN);
+                e.setCancelled(true);
+                long timeRemaining =  (infraction.getWhen() + infraction.getDuration() * 1000)-Calendar.getInstance().getTimeInMillis();
+                long days = timeRemaining / (24 * 60 * 60 * 1000);
+                timeRemaining = timeRemaining % (24 * 60 * 60 * 1000);
+                long hours = timeRemaining / (60 * 60 * 1000);
+                timeRemaining = timeRemaining % (60 * 60 * 1000);
+                long minutes = timeRemaining / (60 * 1000);
+                String remaining = (days == 0 ? "" : " " + days + " day" + (days > 1 ? "s" : "")) +
+                        (hours == 0 ? "" : " " + hours + " hour" + (hours > 1 ? "s" : "")) +
+                        (minutes == 0 ? "" : " " + minutes + " minute" + (minutes > 1 ? "s" : ""));
+                if (remaining.equals("")) remaining = " less than a minute";
+                e.setCancelReason(ChatColor.RED + "You are banned from this server! Your ban expires in" + remaining + "! Reason:\n" + ChatColor.GOLD + infraction.getReason());
+            }
+            e.completeIntent(this);
+        });
+    }
 
     @EventHandler
     public void onPostLogin(PostLoginEvent e){
@@ -68,7 +95,7 @@ public class main extends Plugin implements Listener{
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDisconnect(PlayerDisconnectEvent e){
         CustomPlayer player = CustomPlayer.get(e.getPlayer().getName());
         if(lastMessage.containsKey(player.getName())) lastMessage.remove(player.getName());
@@ -166,6 +193,30 @@ public class main extends Plugin implements Listener{
         }
         assert player != null;
         if(player.hasPermission(Rank.ADMIN)) return;
+        if(player.getActiveInfraction(InfractionType.MUTE) != null){
+            Infraction infraction = player.getActiveInfraction(InfractionType.MUTE);
+            player.message(ChatColor.RED+"You are muted!");
+            player.message(ChatColor.RED+"Reason: "+ChatColor.GOLD+infraction.getReason());
+            e.setCancelled(true);
+            return;
+        }
+        if(player.getActiveInfraction(InfractionType.TEMP_MUTE) != null){
+            Infraction infraction = player.getActiveInfraction(InfractionType.TEMP_MUTE);
+            long timeRemaining =  (infraction.getWhen() + infraction.getDuration() * 1000)-Calendar.getInstance().getTimeInMillis();
+            long days = timeRemaining / (24 * 60 * 60 * 1000);
+            timeRemaining = timeRemaining % (24 * 60 * 60 * 1000);
+            long hours = timeRemaining / (60 * 60 * 1000);
+            timeRemaining = timeRemaining % (60 * 60 * 1000);
+            long minutes = timeRemaining / (60 * 1000);
+            String remaining = (days == 0 ? "" : " " + days + " day" + (days > 1 ? "s" : "")) +
+                    (hours == 0 ? "" : " " + hours + " hour" + (hours > 1 ? "s" : "")) +
+                    (minutes == 0 ? "" : " " + minutes + " minute" + (minutes > 1 ? "s" : ""));
+            if (remaining.equals("")) remaining = " less than a minute";
+            player.message(ChatColor.RED+"You are muted! Your mute expires in"+remaining+"!");
+            player.message(ChatColor.RED+"Reason: "+ChatColor.GOLD+infraction.getReason());
+            e.setCancelled(true);
+            return;
+        }
         if(lastMessage.containsKey(player.getName())){
             if(lastMessage.get(player.getName()).equals(e.getMessage())) {
                 player.message(ChatColor.RED+"You are not allowed to send the same message twice!");
