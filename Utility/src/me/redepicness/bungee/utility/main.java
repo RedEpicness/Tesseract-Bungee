@@ -39,11 +39,21 @@ public class main extends Plugin implements Listener{
         getProxy().getPluginManager().registerCommand(this, new Connect("hub"));
         getProxy().getPluginManager().registerCommand(this, new Connect("rts"));
         getProxy().getPluginManager().registerCommand(this, new Connect("build"));
+        getProxy().getPluginManager().registerCommand(this, new Connect("spleef"));
         getProxy().getPluginManager().registerCommand(this, new Msg());
         getProxy().getPluginManager().registerCommand(this, new me.redepicness.bungee.utility.commands.Rank());
         getProxy().getPluginManager().registerCommand(this, new Lookup());
         getProxy().getPluginManager().registerCommand(this, new Spy());
         getProxy().getPluginManager().registerCommand(this, new Motd());
+        getProxy().getPluginManager().registerCommand(this, new Kick());
+        getProxy().getPluginManager().registerCommand(this, new Ban());
+        getProxy().getPluginManager().registerCommand(this, new TempBan());
+        getProxy().getPluginManager().registerCommand(this, new UnBan());
+        getProxy().getPluginManager().registerCommand(this, new QuickBan());
+        getProxy().getPluginManager().registerCommand(this, new Mute());
+        getProxy().getPluginManager().registerCommand(this, new TempMute());
+        getProxy().getPluginManager().registerCommand(this, new UnMute());
+        getProxy().getPluginManager().registerCommand(this, new QuickMute());
         getProxy().getPluginManager().registerListener(this, this);
         getProxy().getPluginManager().registerListener(this, new Spyer());
         getProxy().getPluginManager().registerCommand(this, new Filter());
@@ -62,6 +72,10 @@ public class main extends Plugin implements Listener{
         e.registerIntent(this);
         getProxy().getScheduler().runAsync(this, () -> {
             CustomPlayer player = CustomPlayer.get(e.getConnection().getName());
+            if(!QuickBan.canJoin(player.getName())){
+                e.setCancelled(true);
+                e.setCancelReason(ChatColor.RED + "You are banned from this server!");
+            }
             if (player.getActiveInfraction(InfractionType.BAN) != null) {
                 Infraction infraction = player.getActiveInfraction(InfractionType.BAN);
                 e.setCancelled(true);
@@ -193,6 +207,11 @@ public class main extends Plugin implements Listener{
         }
         assert player != null;
         if(player.hasPermission(Rank.ADMIN)) return;
+        if(!QuickMute.canTalk(player.getName())){
+            player.message(ChatColor.RED+"You are muted!");
+            e.setCancelled(true);
+            return;
+        }
         if(player.getActiveInfraction(InfractionType.MUTE) != null){
             Infraction infraction = player.getActiveInfraction(InfractionType.MUTE);
             player.message(ChatColor.RED+"You are muted!");

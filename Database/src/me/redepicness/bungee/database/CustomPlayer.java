@@ -119,6 +119,10 @@ public class CustomPlayer{
         return name;
     }
 
+    public void updateInfractions(){
+        getInfractions();
+    }
+
     public Infraction getActiveInfraction(InfractionType type){
         if(isConsole()) return null;
         if(infractions == null) getInfractions();

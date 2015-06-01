@@ -45,8 +45,8 @@ public class Database {
     public static void insertInfraction(Infraction infraction){
         try{
             checkConnection();
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO Infractions ('Time', 'Offender', 'Issuer', 'Type', 'Reason', 'Duration') " +
-                    "VALUES ('?', '?', '?', '?', '?', '?')");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO Infractions (Time, Offender, Issuer, Type, Reason, Duration) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)");
             statement.setLong(1, infraction.getWhen());
             statement.setString(2, infraction.getOffender());
             statement.setString(3, infraction.getIssuer());
